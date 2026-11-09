@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RecySense - Consola Ambiental</title>
+  <link rel="stylesheet" href="css/styles.css">
+  
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Chart.js para gráficos -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Iconos Lucide -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 flex h-screen overflow-hidden">
+
+  <!-- SIDEBAR LATERAL -->
+  <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between p-4 shrink-0">
+    <div class="space-y-6">
+      <div class="flex items-center gap-3 px-2">
+        <img src="assets/Logo.png" alt="RecySense Logo" class="h-12 w-auto">
+      </div>
+
+      <nav class="space-y-1">
+        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider px-2 mb-2">Espacio de trabajo</p>
+        <a href="#" id="nav-dashboard" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-emerald-600/20 text-emerald-400 font-medium">
+          <i data-lucide="layout-grid"></i> Vista general
+        </a>
+        <a href="#" id="nav-containers" class="flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-200">
+          <span class="flex items-center gap-3"><i data-lucide="archive"></i> Contenedores</span>
+          <span id="alert-badge" class="bg-amber-600/30 text-amber-400 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+        </a>
+        <a href="#" id="nav-history" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-200">
+          <i data-lucide="history"></i> Historial
+        </a>
+        
+        <div id="admin-menu-group" class="hidden pt-4 border-t border-slate-800">
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider px-2 mb-2">Administración</p>
+          <a href="#" id="nav-admin-users" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-200">
+            <i data-lucide="users"></i> Gestión Usuarios
+          </a>
+          <a href="#" id="nav-admin-requests" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-200">
+            <i data-lucide="user-check"></i> Solicitudes
+          </a>
+        </div>
+      </nav>
+    </div>
+
+    <div class="space-y-4 text-xs text-slate-500 pt-4 border-t border-slate-800">
+      <div class="bg-slate-800/60 p-3 rounded-lg">
+        <p class="text-slate-400 font-medium mb-1">PUNTO DE RECOLECCIÓN</p>
+        <p class="text-emerald-400 font-semibold flex items-center gap-1"><i data-lucide="map-pin" class="w-3.5 h-3.5"></i> Sede central</p>
+        <p class="text-slate-500">Estación A - Planta baja</p>
+      </div>
+      <div>
+        <p class="italic">"Medir es el primer paso para transformar."</p>
+        <p class="mt-1 font-mono">Consola ambiental · v1.0</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="flex-1 overflow-y-auto bg-gray-50 p-8">
+    <header class="flex justify-between items-center mb-6">
+      <div class="flex items-center gap-2 text-sm text-gray-500">
+        <span>Consola ambiental</span> &rsaquo;
+        <span class="font-medium text-gray-800" id="breadcrumb-current">Vista general</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <span class="text-xs bg-gray-200 px-3 py-1 rounded-full text-gray-600 font-medium flex items-center gap-1">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Conectado a Supabase
+        </span>
+        <button id="user-profile-btn" class="flex items-center gap-2 text-sm font-medium bg-white px-3 py-1.5 rounded-lg border shadow-sm">
+          <span id="user-avatar-initials" class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 text-xs flex items-center justify-center font-bold">--</span>
+          <span id="user-email-display">Cargando...</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="flex justify-between items-end mb-6">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900" id="page-title">Una mirada a tus residuos</h1>
+        <p class="text-sm text-gray-500">Conteos, actividad y capacidad de tu punto de recolección.</p>
+      </div>
+    </div>
+
+    <!-- BOTONES DE FILTRO -->
+    <div class="flex items-center gap-3 mb-6">
+      <button data-waste-type="all" class="filter-btn active flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all bg-slate-900 text-white shadow-sm">
+        <i data-lucide="layers" class="w-4 h-4"></i> Todos
+      </button>
+      <button data-waste-type="paper" class="filter-btn flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all text-blue-600 bg-blue-50 border border-blue-200 hover:bg-blue-100">
+        <i data-lucide="file-text" class="w-4 h-4"></i> Papel
+      </button>
+      <button data-waste-type="cardboard" class="filter-btn flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100">
+        <i data-lucide="package" class="w-4 h-4"></i> Cartón
+      </button>
+      <button data-waste-type="plastic" class="filter-btn flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all text-purple-600 bg-purple-50 border border-purple-200 hover:bg-purple-100">
+        <i data-lucide="cup-soda" class="w-4 h-4"></i> Plástico
+      </button>
+    </div>
+
+    <!-- CONTENEDOR DINÁMICO DEL DASHBOARD -->
+    <div id="dashboard-content"></div>
+  </main>
+
+  <script>
+    lucide.createIcons();
+  </script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+# Archivos del sistema operativo y entorno de desarrollo
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Variables de entorno y claves secretas
+config.local.js
+config.json
+
+# Logs y temporales
+*.log
+npm-debug.log*
+
