@@ -1,9 +1,7 @@
-import { LOCAL_CONFIG } from './config.local.js';
-
 export const CONFIG = {
   SUPABASE: {
-    URL: LOCAL_CONFIG?.SUPABASE_URL || 'https://proyecto.supabase.co',
-    ANON_KEY: LOCAL_CONFIG?.SUPABASE_ANON_KEY || '_SUPABASE_ANON_KEY_PLACEHOLDER'
+    URL: '',      
+    ANON_KEY: ''  
   },
   ALERT_THRESHOLD: 85,
   WASTE_TYPES: {
