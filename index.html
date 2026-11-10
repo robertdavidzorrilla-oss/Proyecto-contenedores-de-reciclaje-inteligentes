@@ -4,14 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RecySense - Consola Ambiental</title>
+
+  <!-- 1. CDN de Tailwind CSS (Aplica todos los estilos de la interfaz) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- 2. Tu hoja de estilos personalizada (para detalles extra) -->
   <link rel="stylesheet" href="css/styles.css">
   
-  <!-- Supabase JS Client -->
+  <!-- 3. Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- Chart.js para gráficos -->
+  <!-- 4. Chart.js para los gráficos -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Iconos Lucide -->
+  <!-- 5. Iconos Lucide -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- 6. Librerías de Exportación -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://unpkg.com/docx@7.8.2/build/index.js"></script>
 </head>
 <body class="bg-gray-100 text-gray-800 flex h-screen overflow-hidden">
 
@@ -109,5 +120,55 @@
     lucide.createIcons();
   </script>
   <script type="module" src="js/main.js"></script>
+
+  <div id="login-screen" class="fixed inset-0 bg-slate-900/90 z-50 flex items-center justify-center p-4">
+   <div class="bg-white rounded-2xl shadow-xl border w-full max-w-md p-8 relative">
+    
+    <!-- Header Login -->
+    <div class="text-center mb-8">
+      <img src="assets/logo.png" alt="RecySense Logo" class="h-16 mx-auto mb-3">
+      <h2 class="text-2xl font-bold text-gray-900">Iniciar Sesión</h2>
+      <p class="text-xs text-gray-500 mt-1">Consola Ambiental - Universidad Central del Este</p>
+    </div>
+
+    <!-- Formulario Login (Sin opción de registro público) -->
+    <form id="auth-login-form" class="space-y-4">
+      <div>
+        <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Correo electrónico</label>
+        <input type="email" id="login-email" required placeholder="estudiante@uce.edu.do" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Contraseña</label>
+        <input type="password" id="login-password" required placeholder="••••••••" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm">
+      </div>
+
+      <div class="flex justify-end">
+        <button type="button" id="btn-forgot-password" class="text-xs text-emerald-600 hover:underline">¿Olvidaste tu contraseña?</button>
+      </div>
+
+      <button type="submit" id="btn-submit-login" class="w-full py-3 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition-colors text-sm shadow-md">
+        Ingresar al sistema
+      </button>
+    </form>
+
+    <!-- Formulario Recuperación (Mensaje Genérico) -->
+    <form id="auth-reset-form" class="space-y-4 hidden">
+      <p class="text-xs text-gray-600">Ingresa tu correo institucional registrado para enviar las instrucciones de recuperación.</p>
+      <div>
+        <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Correo electrónico</label>
+        <input type="email" id="reset-email" required placeholder="ejemplo@uce.edu.do" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-500 text-sm">
+      </div>
+      <div id="reset-feedback-msg" class="hidden text-xs p-3 rounded-lg bg-blue-50 text-blue-700 border border-blue-200">
+        Si el correo existe en nuestro sistema, recibirá un mensaje para restablecer su contraseña.
+      </div>
+      <button type="submit" class="w-full py-2.5 bg-slate-900 text-white font-medium rounded-lg hover:bg-slate-800 text-sm">
+        Enviar instrucciones
+      </button>
+      <button type="button" id="btn-back-to-login" class="w-full py-2 text-xs text-gray-500 hover:underline">
+        Volver al inicio de sesión
+      </button>
+    </form>
+   </div>
+  </div>
 </body>
 </html>

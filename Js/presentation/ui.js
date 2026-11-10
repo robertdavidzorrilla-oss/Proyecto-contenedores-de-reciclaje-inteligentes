@@ -43,6 +43,205 @@ export function renderDashboard(mode, data = null) {
   }
 }
 
+export function renderReportView(metricsData, onExport) {
+  const container = document.getElementById('dashboard-content');
+  const pageTitle = document.getElementById('page-title');
+  const breadcrumb = document.getElementById('breadcrumb-current');
+
+  pageTitle.textContent = 'Reportes Analíticos';
+  breadcrumb.textContent = 'Generación de Reportes';
+
+  container.innerHTML = `
+    <!-- Barra de acciones de exportación -->
+    <div class="flex justify-between items-center bg-white p-4 rounded-xl border shadow-sm mb-6">
+      <h3 class="text-sm font-bold text-gray-800">Exportar Reporte Clasificado</h3>
+      <div class="flex gap-2">
+        <button id="btn-export-pdf" class="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 flex items-center gap-1">
+          <i data-lucide="file-text" class="w-4 h-4"></i> PDF
+        </button>
+        <button id="btn-export-excel" class="px-3 py-1.5 bg-emerald-600 text-white text-xs font-medium rounded-lg hover:bg-emerald-700 flex items-center gap-1">
+          <i data-lucide="sheet" class="w-4 h-4"></i> Excel
+        </button>
+        <button id="btn-export-word" class="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 flex items-center gap-1">
+          <i data-lucide="file" class="w-4 h-4"></i> Word
+        </button>
+        <button id="btn-export-img" class="px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 flex items-center gap-1">
+          <i data-lucide="image" class="w-4 h-4"></i> Imagen
+        </button>
+      </div>
+    </div>
+
+    <!-- Plantilla del Reporte para Visualización y Exportación -->
+    <div id="report-printable-area" class="bg-white p-8 rounded-xl border shadow-sm space-y-6">
+      <div class="flex justify-between items-center border-b pb-4">
+        <div>
+          <h2 class="text-xl font-bold text-gray-900">Consola Ambiental RecySense</h2>
+          <p class="text-xs text-gray-500">Reporte de clasificación y alertas - Universidad Central del Este</p>
+        </div>
+        <img src="assets/logo.png" class="h-10 w-auto">
+      </div>
+
+      <!-- Resumen de Destacados -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="p-4 bg-gray-50 rounded-lg border">
+          <p class="text-xs text-gray-500 font-medium">Mayor Residuo</p>
+          <p class="text-lg font-bold text-emerald-600 uppercase">${metricsData.maxWaste.type}</p>
+          <p class="text-xs text-gray-400">${metricsData.maxWaste.total} depósitos</p>
+        </div>
+        <div class="p-4 bg-gray-50 rounded-lg border">
+          <p class="text-xs text-gray-500 font-medium">Menor Residuo</p>
+          <p class="text-lg font-bold text-amber-600 uppercase">${metricsData.minWaste.type}</p>
+          <p class="text-xs text-gray-400">${metricsData.minWaste.total} depósitos</p>
+        </div>
+        <div class="p-4 bg-gray-50 rounded-lg border">
+          <p class="text-xs text-gray-500 font-medium">Total Recolectado</p>
+          <p class="text-lg font-bold text-gray-900">${metricsData.total}</p>
+          <p class="text-xs text-gray-400">papel, cartón, plástico</p>
+        </div>
+        <div class="p-4 bg-gray-50 rounded-lg border">
+          <p class="text-xs text-gray-500 font-medium">Alertas Enviadas (85%)</p>
+          <p class="text-lg font-bold text-red-600">${metricsData.alertLogs.length}</p>
+          <p class="text-xs text-gray-400">vaciados prioritarios</p>
+        </div>
+      </div>
+
+      <!-- Registro de Alertas de Llenado -->
+      <div>
+        <h3 class="text-sm font-bold text-gray-800 mb-3">Historial de Alertas de Vaciado (&ge; 85%)</h3>
+        <table class="w-full text-xs text-left border">
+          <thead class="bg-gray-100 text-gray-700">
+            <tr>
+              <th class="p-2.5 border">Residuo</th>
+              <th class="p-2.5 border">Nivel de Llenado</th>
+              <th class="p-2.5 border">Fecha / Hora</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${metricsData.alertLogs.length === 0 ? `
+              <tr><td colspan="3" class="p-3 text-center text-gray-400">No se han registrado alertas de llenado.</td></tr>
+            ` : metricsData.alertLogs.map(a => `
+              <tr>
+                <td class="p-2.5 border font-semibold uppercase">${a.tipo}</td>
+                <td class="p-2.5 border text-red-600 font-bold">${a.nivel}%</td>
+                <td class="p-2.5 border">${a.fecha}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  if (window.lucide) window.lucide.createIcons();
+
+  // Escuchadores de botones de exportación
+  document.getElementById('btn-export-pdf')?.addEventListener('click', () => onExport('pdf'));
+  document.getElementById('btn-export-excel')?.addEventListener('click', () => onExport('excel'));
+  document.getElementById('btn-export-word')?.addEventListener('click', () => onExport('word'));
+  document.getElementById('btn-export-img')?.addEventListener('click', () => onExport('image'));
+}
+
+
+/**
+ * Muestra u oculta la pantalla de inicio de sesión
+ */
+export function toggleLoginModal(show) {
+  const loginModal = document.getElementById('login-screen');
+  if (!loginModal) return;
+
+  if (show) {
+    loginModal.classList.remove('hidden');
+  } else {
+    loginModal.classList.add('hidden');
+  }
+}
+
+/**
+ * Configura la vista en base al rol de usuario (Requisitos 6 y 10)
+ */
+export function applyRolePermissions(user, role) {
+  const adminMenuGroup = document.getElementById('admin-menu-group');
+  const userEmailDisplay = document.getElementById('user-email-display');
+  const userAvatarInitials = document.getElementById('user-avatar-initials');
+
+  if (userEmailDisplay) {
+    userEmailDisplay.textContent = `${user.email} (${role})`;
+  }
+
+  if (userAvatarInitials && user.email) {
+    userAvatarInitials.textContent = user.email.substring(0, 2).toUpperCase();
+  }
+
+  // Ocultar o mostrar acciones exclusivas del Administrador (Requisitos 6, 7, 10 y Restricción 3)
+  if (role === 'Administrador') {
+    adminMenuGroup?.classList.remove('hidden');
+  } else {
+    adminMenuGroup?.classList.add('hidden');
+  }
+}
+
+/**
+ * Muestra el panel interno de gestión de usuarios/solicitudes para Admin (Requisito 7 y 10)
+ */
+export function renderAdminPanel(pendingRequests = []) {
+  const container = document.getElementById('dashboard-content');
+  const pageTitle = document.getElementById('page-title');
+  const breadcrumb = document.getElementById('breadcrumb-current');
+
+  pageTitle.textContent = 'Panel de Administración';
+  breadcrumb.textContent = 'Gestión de Usuarios';
+
+  container.innerHTML = `
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <!-- Módulo Registrar / Invitar Usuario (Requisito 7) -->
+      <div class="bg-white p-6 rounded-xl border shadow-sm">
+        <h3 class="text-base font-bold text-gray-900 mb-2">Invitar Nuevo Usuario</h3>
+        <p class="text-xs text-gray-500 mb-4">El usuario recibirá un correo electrónico para configurar su contraseña.</p>
+        
+        <form id="form-invite-user" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Correo Electrónico</label>
+            <input type="email" id="invite-email" required placeholder="usuario@uce.edu.do" class="w-full px-3 py-2 rounded-lg border text-sm focus:ring-2 focus:ring-emerald-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Rol Asignado</label>
+            <select id="invite-role" class="w-full px-3 py-2 rounded-lg border text-sm focus:ring-2 focus:ring-emerald-500">
+              <option value="Usuario Común">Usuario Común</option>
+              <option value="Administrador">Administrador</option>
+            </select>
+          </div>
+          <button type="submit" class="w-full py-2.5 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 text-sm">
+            Enviar Invitación
+          </button>
+        </form>
+      </div>
+
+      <!-- Módulo Solicitudes Pendientes (Requisito 10) -->
+      <div class="bg-white p-6 rounded-xl border shadow-sm">
+        <h3 class="text-base font-bold text-gray-900 mb-2">Solicitudes Pendientes</h3>
+        <p class="text-xs text-gray-500 mb-4">Aceptar o rechazar acceso a nuevos usuarios.</p>
+
+        <div class="space-y-3 max-h-64 overflow-y-auto">
+          ${pendingRequests.length === 0 ? `
+            <div class="text-center py-8 text-xs text-gray-400">No hay solicitudes pendientes en este momento.</div>
+          ` : pendingRequests.map(req => `
+            <div class="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
+              <div>
+                <p class="text-sm font-medium text-gray-800">${req.email}</p>
+                <p class="text-xs text-gray-400">Solicitado: ${new Date(req.created_at).toLocaleDateString()}</p>
+              </div>
+              <div class="flex gap-2">
+                <button data-req-id="${req.id}" data-action="approve" class="btn-req-action px-3 py-1 bg-emerald-600 text-white text-xs rounded-md hover:bg-emerald-700">Aceptar</button>
+                <button data-req-id="${req.id}" data-action="reject" class="btn-req-action px-3 py-1 bg-red-600 text-white text-xs rounded-md hover:bg-red-700">Rechazar</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function createGeneralLayout(data) {
   const total = data?.totalCount || 0;
   const paper = data?.paperCount || 0;
