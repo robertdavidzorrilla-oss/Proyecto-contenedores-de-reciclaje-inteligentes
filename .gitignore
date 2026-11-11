@@ -5,7 +5,7 @@ Thumbs.db
 .idea/
 
 # Variables de entorno y claves secretas
-config.local.js
+Js.config.local.json
 config.json
 
 # Logs y temporales
