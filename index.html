@@ -29,8 +29,8 @@
   <!-- SIDEBAR LATERAL -->
   <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between p-4 shrink-0">
     <div class="space-y-6">
-      <div class="flex items-center gap-3 px-2">
-        <img src="assets/Logo.png" alt="RecySense Logo" class="h-12 w-auto">
+      <div class="flex items-center justify-center p-2 mb-2">
+        <img src="assets/Logo.png" alt="RecySense Logo" class="h-20 w-auto object-contain">
       </div>
 
       <nav class="space-y-1">
@@ -58,15 +58,26 @@
       </nav>
     </div>
 
-    <div class="space-y-4 text-xs text-slate-500 pt-4 border-t border-slate-800">
-      <div class="bg-slate-800/60 p-3 rounded-lg">
-        <p class="text-slate-400 font-medium mb-1">PUNTO DE RECOLECCIÓN</p>
-        <p class="text-emerald-400 font-semibold flex items-center gap-1"><i data-lucide="map-pin" class="w-3.5 h-3.5"></i> Sede central</p>
-        <p class="text-slate-500">Estación A - Planta baja</p>
+    <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60 space-y-2">
+      <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">PUNTO DE RECOLECCIÓN</p>
+      <p class="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+        <i data-lucide="building-2" class="w-4 h-4 shrink-0"></i> Universidad Central del Este
+      </p>
+  
+      <!-- Selector de Ubicación Rotativa (Laboratorios / Biblioteca) -->
+      <div class="pt-1 flex gap-1">
+        <button id="btn-loc-labs" data-location="laboratorios" class="location-btn flex-1 py-1.5 px-2 text-[11px] font-semibold rounded-lg bg-emerald-600 text-white transition-all text-center">
+          Laboratorios
+        </button>
+        <button id="btn-loc-library" data-location="biblioteca" class="location-btn flex-1 py-1.5 px-2 text-[11px] font-semibold rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 transition-all text-center">
+          Biblioteca
+        </button>
       </div>
+      <p id="location-station-label" class="text-[10px] text-slate-400 pt-0.5 font-mono">Estación A - Edificio de Labs</p>
+    </div>
       <div>
-        <p class="italic">"Medir es el primer paso para transformar."</p>
-        <p class="mt-1 font-mono">Consola ambiental · v1.0</p>
+        <p class="italic">Medir es el primer paso para transformar.</p>
+        <p class="mt-1 font-mono">Consola ambiental</p>
       </div>
     </div>
   </aside>
@@ -80,7 +91,7 @@
       </div>
       <div class="flex items-center gap-4">
         <span class="text-xs bg-gray-200 px-3 py-1 rounded-full text-gray-600 font-medium flex items-center gap-1">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Conectado aL Servidor
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Conectado al servidor
         </span>
         <button id="user-profile-btn" class="flex items-center gap-2 text-sm font-medium bg-white px-3 py-1.5 rounded-lg border shadow-sm">
           <span id="user-avatar-initials" class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 text-xs flex items-center justify-center font-bold">--</span>
@@ -97,7 +108,7 @@
     </div>
 
     <!-- BOTONES DE FILTRO -->
-    <div class="flex items-center gap-3 mb-6">
+    <div id="waste-filter-bar" class="flex items-center gap-3 mb-6">
       <button data-waste-type="all" class="filter-btn active flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all bg-slate-900 text-white shadow-sm">
         <i data-lucide="layers" class="w-4 h-4"></i> Todos
       </button>
@@ -126,7 +137,7 @@
     
     <!-- Header Login -->
     <div class="text-center mb-8">
-      <img src="assets/logo.png" alt="RecySense Logo" class="h-16 mx-auto mb-3">
+      <img src="assets/logo.png" alt="RecySense Logo" class="h-24 mx-auto mb-4 object-contain">
       <h2 class="text-2xl font-bold text-gray-900">Iniciar Sesión</h2>
       <p class="text-xs text-gray-500 mt-1">Consola Ambiental - Universidad Central del Este</p>
     </div>

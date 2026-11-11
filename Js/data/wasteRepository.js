@@ -3,18 +3,20 @@ import { supabase } from './supabaseClient.js';
 
 export class WasteRepository {
   /**
-   * Obtiene el resumen del Dashboard consumiendo la función RPC de Supabase (Requisito 3)
+   * Obtiene el resumen del Dashboard consumiendo la función RPC de Supabase 
    */
-  static async getDashboardMetrics() {
-    try {
-      const { data, error } = await supabase.rpc('obtener_metricas_dashboard');
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error al consultar métricas en Supabase:', error);
-      return null;
-    }
+  static async getDashboardMetrics(location = 'laboratorios') {
+  try {
+    const { data, error } = await supabase.rpc('obtener_metricas_dashboard', {
+      p_ubicacion: location
+    });
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error(`Error al obtener métricas para ${location}:`, error);
+    return null;
   }
+}
 
   /**
    * Obtiene el histórico completo de lecturas para la generación de reportes

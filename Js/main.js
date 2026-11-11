@@ -1,10 +1,10 @@
 // Actualización de js/main.js
-import { initDashboardEvents, renderDashboard, toggleLoginModal, applyRolePermissions, renderAdminPanel } from './presentation/ui.js';
+import { initDashboardEvents, toggleLoginModal, applyRolePermissions,  } from './presentation/ui.js';
 import { showDashboardSkeleton } from './presentation/skeletonUI.js';
 import { AuthService } from './business/authService.js';
 import { WasteRepository } from './data/wasteRepository.js';
 import { ReportService } from './business/reportService.js';
-import { renderReportView } from './presentation/ui.js';
+import {setActiveNav, renderDashboard, renderAdminPanel, renderReportView, getCurrentLocation } from './presentation/ui.js';
 
 // Evento en menú lateral para abrir Reportes
 document.getElementById('nav-history')?.addEventListener('click', async () => {
@@ -38,22 +38,33 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Evento Formulario de Login
   const loginForm = document.getElementById('auth-login-form');
   loginForm?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
+  e.preventDefault();
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
 
-    try {
-      toggleLoginModal(false);
-      showDashboardSkeleton(); // Requisito 9: Esqueleto de carga visual
+  try {
+    toggleLoginModal(false);
+    showDashboardSkeleton();
 
-      const { user, role } = await AuthService.login(email, password);
-      
-      applyRolePermissions(user, role);
-      renderDashboard(currentMode, null);
-    } catch (err) {
-      alert('Error de autenticación: Verifique sus credenciales.');
-      toggleLoginModal(true);
-    }
+    // Intentar autenticación
+    const { user, role } = await AuthService.login(email, password);
+    
+    applyRolePermissions(user, role);
+
+    const initialMetrics = await WasteRepository.getDashboardMetrics(getCurrentLocation());
+    renderDashboard('all', initialMetrics);
+
+    WasteRepository.subscribeToLiveUpdates(async (newReading) => {
+      const updatedMetrics = await WasteRepository.getDashboardMetrics(getCurrentLocation());
+      renderDashboard('all', updatedMetrics);
+    });
+
+  } catch (err) {
+    // Imprimir el error exacto devuelto por Supabase o por el script
+    console.error('Error detallado de autenticación:', err);
+    alert(`Error de autenticación: ${err.message || 'Verifique sus credenciales'}`);
+    toggleLoginModal(true);
+  }
   });
 
   // Evento Recuperación de Contraseña (Requisito 8: Respuesta genérica)
@@ -93,4 +104,69 @@ document.addEventListener('DOMContentLoaded', async () => {
       renderAdminPanel([]);
     }
   });
+
+  document.getElementById('nav-containers')?.addEventListener('click', (e) => {
+   e.preventDefault();
+   const locationCard = document.getElementById('location-station-label')?.parentElement;
+    if (locationCard) {
+    locationCard.classList.add('ring-2', 'ring-emerald-500');
+    setTimeout(() => locationCard.classList.remove('ring-2', 'ring-emerald-500'), 1500);
+    }
+  });
+
+  // 1. Clic en "Vista general"
+  document.getElementById('nav-dashboard')?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    currentMode = 'all';
+    setActiveNav('nav-dashboard');
+    const metrics = await WasteRepository.getDashboardMetrics(getCurrentLocation());
+    renderDashboard('all', metrics);
+  });
+
+  // 2. Clic en "Contenedores"
+  document.getElementById('nav-containers')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    setActiveNav('nav-containers');
+    const locationCard = document.getElementById('location-station-label')?.parentElement;
+    if (locationCard) {
+      locationCard.classList.add('ring-2', 'ring-emerald-500');
+      setTimeout(() => locationCard.classList.remove('ring-2', 'ring-emerald-500'), 1500);
+    }
+  });
+
+  // 3. Clic en "Historial" (Reportes)
+  document.getElementById('nav-history')?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    setActiveNav('nav-history');
+    const rawReadings = await WasteRepository.getAllReadings();
+    const metrics = ReportService.generateMetricsSummary(rawReadings);
+    renderReportView(metrics, (format) => {
+      if (format === 'pdf') ReportService.exportToPDF('report-printable-area');
+      if (format === 'excel') ReportService.exportToExcel(metrics);
+      if (format === 'word') ReportService.exportToWord(metrics);
+      if (format === 'image') ReportService.exportToImage('report-printable-area');
+    });
+  });
+
+  // 4. Clic en "Gestión Usuarios" (Admin)
+  document.getElementById('nav-admin-users')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (AuthService.isAdmin()) {
+      setActiveNav('nav-admin-users');
+      renderAdminPanel([]);
+    }
+  });
+
+  // 5. Clic en "Solicitudes" (Admin)
+  document.getElementById('nav-admin-requests')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (AuthService.isAdmin()) {
+      setActiveNav('nav-admin-requests');
+      // Vista de solicitudes pendientes
+    }
+  });
+
 });
+
+
+

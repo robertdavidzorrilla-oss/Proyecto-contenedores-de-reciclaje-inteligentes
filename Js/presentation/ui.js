@@ -423,3 +423,71 @@ function renderSingleChart(type, chartData) {
     options: { responsive: true, maintainAspectRatio: false }
   });
 }
+
+
+import { LOCATIONS } from '../config.js';
+
+let currentLocation = 'laboratorios';
+
+export function initLocationEvents(onLocationChange) {
+  const locBtns = document.querySelectorAll('.location-btn');
+  const stationLabel = document.getElementById('location-station-label');
+
+  locBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const locId = e.currentTarget.dataset.location;
+      if (locId === currentLocation) return;
+
+      currentLocation = locId;
+
+      locBtns.forEach(b => {
+        b.classList.remove('bg-emerald-600', 'text-white');
+        b.classList.add('bg-slate-700', 'text-slate-300');
+      });
+
+      e.currentTarget.classList.remove('bg-slate-700', 'text-slate-300');
+      e.currentTarget.classList.add('bg-emerald-600', 'text-white');
+
+      if (stationLabel) {
+        stationLabel.textContent = locId === 'laboratorios' 
+          ? LOCATIONS.LABS.station 
+          : LOCATIONS.LIBRARY.station;
+      }
+
+      onLocationChange(currentLocation);
+    });
+  });
+}
+
+export function getCurrentLocation() {
+  return currentLocation;
+}
+
+/**
+ * Actualiza el estado visual del menú lateral según la sección activa 
+ * @param {string} activeNavId - ID del elemento nav activo (ej. 'nav-dashboard', 'nav-history', etc.)
+ */
+export function setActiveNav(activeNavId) {
+  const navIds = ['nav-dashboard', 'nav-containers', 'nav-history', 'nav-admin-users', 'nav-admin-requests'];
+
+  navIds.forEach(id => {
+    const navItem = document.getElementById(id);
+    if (!navItem) return;
+
+    if (id === activeNavId) {
+      navItem.className = 'flex items-center justify-between px-3 py-2.5 rounded-lg bg-emerald-600/20 text-emerald-400 font-medium transition-all';
+    } else {
+      navItem.className = 'flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-all';
+    }
+  });
+
+  // Control de visibilidad de los botones de filtro (Punto 4)
+  const filterBar = document.getElementById('waste-filter-bar');
+  if (filterBar) {
+    if (activeNavId === 'nav-dashboard' || activeNavId === 'nav-history') {
+      filterBar.classList.remove('hidden');
+    } else {
+      filterBar.classList.add('hidden');
+    }
+  }
+}
