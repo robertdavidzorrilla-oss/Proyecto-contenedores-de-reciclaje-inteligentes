@@ -29,6 +29,48 @@ export class AuthRepository {
   }
 
   /**
+   * Obtiene todos los usuarios registrados para la gestión de roles
+   */
+  static async getAllUsers() {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error al obtener usuarios:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Actualiza el rol de un usuario (ascender a Administrador o descender a Usuario Común)
+   */
+  static async updateUserRole(userId, newRole) {
+    try {
+      const { data, error } = await supabase.rpc('cambiar_rol_usuario', {
+        p_user_id: userId,
+        p_nuevo_rol: newRole
+      });
+      if (!error && data) return data;
+    } catch (e) {
+      // Fallback si la función RPC no está presente en la base de datos
+    }
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ role: newRole })
+      .eq('id', userId)
+      .select();
+
+    if (error) throw error;
+    return data;
+  }
+
+  /**
    * Solicita el restablecimiento de contraseña vía Gmail (Requisito 8)
    */
   static async requestPasswordReset(email) {
@@ -64,13 +106,37 @@ export class AuthRepository {
    * Obtiene la lista de solicitudes pendientes para el administrador (Requisito 10)
    */
   static async getPendingRequests() {
-    const { data, error } = await supabase
-      .from('solicitudes_acceso')
-      .select('*')
-      .eq('estado', 'pendiente');
+    try {
+      const { data, error } = await supabase
+        .from('solicitudes_acceso')
+        .select('*')
+        .eq('estado', 'pendiente')
+        .order('created_at', { ascending: false });
 
-    if (error) throw error;
-    return data;
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error al obtener solicitudes pendientes:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Obtiene la cantidad de solicitudes pendientes para el badge del menú
+   */
+  static async getPendingRequestsCount() {
+    try {
+      const { count, error } = await supabase
+        .from('solicitudes_acceso')
+        .select('*', { count: 'exact', head: true })
+        .eq('estado', 'pendiente');
+
+      if (error) throw error;
+      return count || 0;
+    } catch (error) {
+      const list = await this.getPendingRequests();
+      return list ? list.length : 0;
+    }
   }
 
   /**

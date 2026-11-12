@@ -3,20 +3,43 @@
 
 body {
   font-family: 'Inter', sans-serif;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Transiciones suaves para las barras de nivel de llenado */
+/* Transiciones suaves para elementos interactivos */
 .transition-all {
   transition-property: all;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 300ms;
 }
 
-/* Ocultar scrollbars sin perder la funcionalidad */
+/* Ocultar barras de scroll manteniendo el deslizamiento en móviles */
+.scrollbar-none::-webkit-scrollbar,
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+  width: 0;
+  height: 0;
 }
+
+.scrollbar-none,
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Desplazamiento táctil fluido en iOS/Android */
+.overflow-x-auto,
+.overflow-y-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ajustes de impresión y renderizado */
+@media print {
+  aside, header, #waste-filter-bar, button {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+    background: white !important;
+  }
 }

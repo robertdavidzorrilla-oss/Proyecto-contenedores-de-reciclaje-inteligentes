@@ -1,7 +1,40 @@
 // js/presentation/ui.js
-import { CONFIG } from '../config.js';
+import { CONFIG, LOCATIONS } from '../config.js';
 
 let chartInstance = null;
+let reportChartInstance = null;
+let currentLocation = 'laboratorios';
+
+export function initMobileMenu() {
+  const toggleBtn = document.getElementById('mobile-menu-btn');
+  const closeBtn = document.getElementById('sidebar-close-btn');
+  const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+
+  function openSidebar() {
+    if (sidebar) sidebar.classList.remove('-translate-x-full');
+    if (backdrop) backdrop.classList.remove('hidden');
+  }
+
+  function closeSidebar() {
+    if (sidebar) sidebar.classList.add('-translate-x-full');
+    if (backdrop) backdrop.classList.add('hidden');
+  }
+
+  toggleBtn?.addEventListener('click', openSidebar);
+  closeBtn?.addEventListener('click', closeSidebar);
+  backdrop?.addEventListener('click', closeSidebar);
+
+  // Cerrar el sidebar al seleccionar una sección en celulares
+  const navLinks = sidebar?.querySelectorAll('nav a, .location-btn');
+  navLinks?.forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth < 768) {
+        closeSidebar();
+      }
+    });
+  });
+}
 
 export function initDashboardEvents(onFilterChange) {
   const filterBtns = document.querySelectorAll('.filter-btn');
@@ -17,6 +50,17 @@ export function initDashboardEvents(onFilterChange) {
       const wasteType = target.dataset.wasteType;
       onFilterChange(wasteType);
     });
+  });
+}
+
+export function setActiveFilter(wasteType) {
+  const filterBtns = document.querySelectorAll('.filter-btn');
+  filterBtns.forEach(btn => {
+    if (btn.dataset.wasteType === wasteType) {
+      btn.classList.add('active', 'bg-slate-900', 'text-white');
+    } else {
+      btn.classList.remove('active', 'bg-slate-900', 'text-white');
+    }
   });
 }
 
@@ -43,45 +87,29 @@ export function renderDashboard(mode, data = null) {
   }
 }
 
-export function renderReportView(metricsData, onExport) {
+export function renderReportView(metricsData, onExport, filterType = 'all') {
   const container = document.getElementById('dashboard-content');
   const pageTitle = document.getElementById('page-title');
   const breadcrumb = document.getElementById('breadcrumb-current');
 
-  pageTitle.textContent = 'Reportes Analíticos';
-  breadcrumb.textContent = 'Generación de Reportes';
+  if (reportChartInstance) {
+    reportChartInstance.destroy();
+    reportChartInstance = null;
+  }
 
-  container.innerHTML = `
-    <!-- Barra de acciones de exportación -->
-    <div class="flex justify-between items-center bg-white p-4 rounded-xl border shadow-sm mb-6">
-      <h3 class="text-sm font-bold text-gray-800">Exportar Reporte Clasificado</h3>
-      <div class="flex gap-2">
-        <button id="btn-export-pdf" class="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 flex items-center gap-1">
-          <i data-lucide="file-text" class="w-4 h-4"></i> PDF
-        </button>
-        <button id="btn-export-excel" class="px-3 py-1.5 bg-emerald-600 text-white text-xs font-medium rounded-lg hover:bg-emerald-700 flex items-center gap-1">
-          <i data-lucide="sheet" class="w-4 h-4"></i> Excel
-        </button>
-        <button id="btn-export-word" class="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 flex items-center gap-1">
-          <i data-lucide="file" class="w-4 h-4"></i> Word
-        </button>
-        <button id="btn-export-img" class="px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 flex items-center gap-1">
-          <i data-lucide="image" class="w-4 h-4"></i> Imagen
-        </button>
-      </div>
-    </div>
+  const isAll = filterType === 'all';
+  const label = !isAll ? (CONFIG.WASTE_TYPES[filterType.toUpperCase()]?.label || filterType) : 'Todos';
 
-    <!-- Plantilla del Reporte para Visualización y Exportación -->
-    <div id="report-printable-area" class="bg-white p-8 rounded-xl border shadow-sm space-y-6">
-      <div class="flex justify-between items-center border-b pb-4">
-        <div>
-          <h2 class="text-xl font-bold text-gray-900">Consola Ambiental RecySense</h2>
-          <p class="text-xs text-gray-500">Reporte de clasificación y alertas - Universidad Central del Este</p>
-        </div>
-        <img src="assets/logo.png" class="h-10 w-auto">
-      </div>
+  pageTitle.textContent = isAll ? 'Reportes Analíticos' : `Reporte de ${label}`;
+  breadcrumb.textContent = isAll ? 'Generación de Reportes' : `Reporte · ${label}`;
 
-      <!-- Resumen de Destacados -->
+  let summaryHtml = '';
+  let chartSectionHtml = '';
+  let alertsTitle = 'Historial de Alertas de Vaciado (&ge; 85%)';
+
+  if (isAll) {
+    // Si el reporte es de todos
+    summaryHtml = `
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div class="p-4 bg-gray-50 rounded-lg border">
           <p class="text-xs text-gray-500 font-medium">Mayor Residuo</p>
@@ -104,33 +132,190 @@ export function renderReportView(metricsData, onExport) {
           <p class="text-xs text-gray-400">vaciados prioritarios</p>
         </div>
       </div>
+    `;
+  } else {
+    // Si el reporte es de un solo residuo
+    const config = CONFIG.WASTE_TYPES[filterType.toUpperCase()];
+    summaryHtml = `
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="p-4 bg-gray-50 rounded-lg border">
+          <p class="text-xs text-gray-500 font-medium">Residuo</p>
+          <p class="text-lg font-bold" style="color: ${config.color}">${config.label}</p>
+          <p class="text-xs text-gray-400">Reporte individual</p>
+        </div>
+        <div class="p-4 bg-gray-50 rounded-lg border">
+          <p class="text-xs text-gray-500 font-medium">Total Recolectado</p>
+          <p class="text-lg font-bold text-gray-900">${metricsData.singleCount}</p>
+          <p class="text-xs text-gray-400">depósitos registrados</p>
+        </div>
+        <div class="p-4 bg-gray-50 rounded-lg border">
+          <p class="text-xs text-gray-500 font-medium">Mayor Actividad</p>
+          <p class="text-lg font-bold text-emerald-600">${metricsData.peakHour || '--:--'}</p>
+          <p class="text-xs text-gray-400">hora pico</p>
+        </div>
+        <div class="p-4 bg-gray-50 rounded-lg border">
+          <p class="text-xs text-gray-500 font-medium">Alertas Enviadas (85%)</p>
+          <p class="text-lg font-bold text-red-600">${metricsData.alertLogs.length}</p>
+          <p class="text-xs text-gray-400">vaciados prioritarios</p>
+        </div>
+      </div>
+    `;
+
+    // Incluir el gráfico del residuo individual para exportación y visualización
+    chartSectionHtml = `
+      <div class="p-5 bg-gray-50 rounded-lg border">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-sm font-bold text-gray-800">Actividad del ${config.label.toLowerCase()} por intervalo de hora</h3>
+          <span class="text-xs text-gray-500">Distribución de depósitos</span>
+        </div>
+        <div class="h-64 relative">
+          <canvas id="reportChart"></canvas>
+        </div>
+      </div>
+    `;
+    alertsTitle = `Historial de Alertas de Vaciado - ${config.label} (&ge; 85%)`;
+  }
+
+  // Bloque de Análisis de Movimiento por Ubicación (Requisito Adicional 1)
+  let locationComparisonHtml = '';
+  if (metricsData.topLocation && metricsData.locationStats) {
+    const labsTotal = metricsData.locationStats.laboratorios.total;
+    const libTotal = metricsData.locationStats.biblioteca.total;
+    const sumBoth = labsTotal + libTotal;
+    const labsPct = sumBoth > 0 ? ((labsTotal / sumBoth) * 100).toFixed(1) : 50;
+    const libPct = sumBoth > 0 ? ((libTotal / sumBoth) * 100).toFixed(1) : 50;
+
+    locationComparisonHtml = `
+      <div class="p-5 bg-gray-50 rounded-xl border space-y-3">
+        <div class="flex justify-between items-center border-b pb-2">
+          <div class="flex items-center gap-2">
+            <span class="p-1.5 bg-emerald-100 text-emerald-700 rounded-lg"><i data-lucide="map-pin" class="w-4 h-4"></i></span>
+            <h3 class="text-sm font-bold text-gray-900">Análisis de Movimiento por Ubicación (Prototipo Móvil)</h3>
+          </div>
+          <span class="text-xs px-2.5 py-1 bg-emerald-600 text-white font-bold rounded-full">
+            Líder: ${metricsData.topLocation.shortName} (${metricsData.topLocation.percentage}%)
+          </span>
+        </div>
+        <p class="text-xs text-gray-600">
+          El prototipo único fue rotado entre las 2 zonas prioritarias del campus. 
+          <strong>${metricsData.topLocation.name}</strong> registró el <strong>mayor volumen de depósitos (${metricsData.topLocation.total} unidades)</strong> frente a la otra estación.
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+          <div class="p-3 bg-white rounded-lg border ${metricsData.topLocation.id === 'laboratorios' ? 'border-emerald-400 ring-1 ring-emerald-300' : 'border-gray-200'}">
+            <div class="flex justify-between items-center mb-1.5">
+              <span class="text-xs font-semibold text-gray-800 flex items-center gap-1.5">
+                <i data-lucide="flask-conical" class="w-3.5 h-3.5 text-blue-600"></i> Laboratorios (Estación A)
+              </span>
+              <span class="text-xs font-bold text-gray-900">${labsTotal} depósitos <span class="text-gray-400 font-normal">(${labsPct}%)</span></span>
+            </div>
+            <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+              <div class="bg-blue-600 h-2 rounded-full" style="width: ${labsPct}%"></div>
+            </div>
+          </div>
+
+          <div class="p-3 bg-white rounded-lg border ${metricsData.topLocation.id === 'biblioteca' ? 'border-emerald-400 ring-1 ring-emerald-300' : 'border-gray-200'}">
+            <div class="flex justify-between items-center mb-1.5">
+              <span class="text-xs font-semibold text-gray-800 flex items-center gap-1.5">
+                <i data-lucide="book-open" class="w-3.5 h-3.5 text-amber-600"></i> Biblioteca (Estación B)
+              </span>
+              <span class="text-xs font-bold text-gray-900">${libTotal} depósitos <span class="text-gray-400 font-normal">(${libPct}%)</span></span>
+            </div>
+            <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+              <div class="bg-amber-600 h-2 rounded-full" style="width: ${libPct}%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  container.innerHTML = `
+    <!-- Barra de acciones de exportación (Responsive para celular) -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-xl border shadow-sm mb-6 gap-3">
+      <div>
+        <h3 class="text-sm font-bold text-gray-800">Exportar Reporte ${isAll ? 'Clasificado General' : `de ${label}`}</h3>
+        <p class="text-xs text-gray-400">Genera y descarga en formatos PDF, Excel, Word o Imagen</p>
+      </div>
+      <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+        <button id="btn-export-pdf" class="flex-1 sm:flex-none justify-center px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 flex items-center gap-1 shadow-sm">
+          <i data-lucide="file-text" class="w-4 h-4"></i> PDF
+        </button>
+        <button id="btn-export-excel" class="flex-1 sm:flex-none justify-center px-3 py-1.5 bg-emerald-600 text-white text-xs font-medium rounded-lg hover:bg-emerald-700 flex items-center gap-1 shadow-sm">
+          <i data-lucide="sheet" class="w-4 h-4"></i> Excel
+        </button>
+        <button id="btn-export-word" class="flex-1 sm:flex-none justify-center px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 flex items-center gap-1 shadow-sm">
+          <i data-lucide="file" class="w-4 h-4"></i> Word
+        </button>
+        <button id="btn-export-img" class="flex-1 sm:flex-none justify-center px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 flex items-center gap-1 shadow-sm">
+          <i data-lucide="image" class="w-4 h-4"></i> Imagen
+        </button>
+      </div>
+    </div>
+
+    <!-- Plantilla del Reporte para Visualización y Exportación -->
+    <div id="report-printable-area" class="bg-white p-4 sm:p-8 rounded-xl border shadow-sm space-y-6">
+      <div class="flex justify-between items-center border-b pb-4">
+        <div>
+          <h2 class="text-lg sm:text-xl font-bold text-gray-900">Consola Ambiental RecySense</h2>
+          <p class="text-xs text-gray-500">${isAll ? 'Reporte general de clasificación y alertas' : `Reporte individual de ${label}`} - Universidad Central del Este</p>
+        </div>
+        <img src="assets/Logo.png" class="h-8 sm:h-10 w-auto object-contain" alt="Logo RecySense">
+      </div>
+
+      <!-- Resumen de Destacados -->
+      ${summaryHtml}
+
+      <!-- Análisis de Movimiento por Ubicación (Requisito Adicional 1) -->
+      ${locationComparisonHtml}
+
+      <!-- Gráfico de Actividad del Residuo (cuando es individual) -->
+      ${chartSectionHtml}
 
       <!-- Registro de Alertas de Llenado -->
       <div>
-        <h3 class="text-sm font-bold text-gray-800 mb-3">Historial de Alertas de Vaciado (&ge; 85%)</h3>
-        <table class="w-full text-xs text-left border">
-          <thead class="bg-gray-100 text-gray-700">
-            <tr>
-              <th class="p-2.5 border">Residuo</th>
-              <th class="p-2.5 border">Nivel de Llenado</th>
-              <th class="p-2.5 border">Fecha / Hora</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${metricsData.alertLogs.length === 0 ? `
-              <tr><td colspan="3" class="p-3 text-center text-gray-400">No se han registrado alertas de llenado.</td></tr>
-            ` : metricsData.alertLogs.map(a => `
+        <h3 class="text-sm font-bold text-gray-800 mb-3">${alertsTitle}</h3>
+        <div class="overflow-x-auto w-full rounded-lg border">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-gray-100 text-gray-700">
               <tr>
-                <td class="p-2.5 border font-semibold uppercase">${a.tipo}</td>
-                <td class="p-2.5 border text-red-600 font-bold">${a.nivel}%</td>
-                <td class="p-2.5 border">${a.fecha}</td>
+                <th class="p-2.5 border-b">Residuo</th>
+                <th class="p-2.5 border-b">Ubicación</th>
+                <th class="p-2.5 border-b">Nivel de Llenado</th>
+                <th class="p-2.5 border-b">Fecha / Hora</th>
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
+            </thead>
+            <tbody class="divide-y">
+              ${metricsData.alertLogs.length === 0 ? `
+                <tr><td colspan="4" class="p-3 text-center text-gray-400">No se han registrado alertas de llenado.</td></tr>
+              ` : metricsData.alertLogs.map(a => `
+                <tr>
+                  <td class="p-2.5 font-semibold uppercase">${a.tipo}</td>
+                  <td class="p-2.5 text-gray-600 capitalize">${a.ubicacion || 'Laboratorios'}</td>
+                  <td class="p-2.5 text-red-600 font-bold">${a.nivel}%</td>
+                  <td class="p-2.5 text-gray-600">${a.fecha}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   `;
+
+  // Renderizar gráfico de barras en el canvas del reporte si es residuo individual
+  if (!isAll && metricsData.chartData) {
+    const ctx = document.getElementById('reportChart');
+    if (ctx) {
+      reportChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: metricsData.chartData,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+    }
+  }
 
   if (window.lucide) window.lucide.createIcons();
 
@@ -140,7 +325,6 @@ export function renderReportView(metricsData, onExport) {
   document.getElementById('btn-export-word')?.addEventListener('click', () => onExport('word'));
   document.getElementById('btn-export-img')?.addEventListener('click', () => onExport('image'));
 }
-
 
 /**
  * Muestra u oculta la pantalla de inicio de sesión
@@ -172,7 +356,7 @@ export function applyRolePermissions(user, role) {
     userAvatarInitials.textContent = user.email.substring(0, 2).toUpperCase();
   }
 
-  // Ocultar o mostrar acciones exclusivas del Administrador (Requisitos 6, 7, 10 y Restricción 3)
+  // Ocultar o mostrar acciones exclusivas del Administrador
   if (role === 'Administrador') {
     adminMenuGroup?.classList.remove('hidden');
   } else {
@@ -181,9 +365,9 @@ export function applyRolePermissions(user, role) {
 }
 
 /**
- * Muestra el panel interno de gestión de usuarios/solicitudes para Admin (Requisito 7 y 10)
+ * Muestra el panel de Gestión de Usuarios y Roles (Punto 6: Invitación + Brindar/Revocar Roles)
  */
-export function renderAdminPanel(pendingRequests = []) {
+export function renderAdminUsersPanel(users = [], onInvite, onRoleChange) {
   const container = document.getElementById('dashboard-content');
   const pageTitle = document.getElementById('page-title');
   const breadcrumb = document.getElementById('breadcrumb-current');
@@ -195,8 +379,11 @@ export function renderAdminPanel(pendingRequests = []) {
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
       <!-- Módulo Registrar / Invitar Usuario (Requisito 7) -->
       <div class="bg-white p-6 rounded-xl border shadow-sm">
-        <h3 class="text-base font-bold text-gray-900 mb-2">Invitar Nuevo Usuario</h3>
-        <p class="text-xs text-gray-500 mb-4">El usuario recibirá un correo electrónico para configurar su contraseña.</p>
+        <div class="flex items-center gap-2 mb-2">
+          <span class="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><i data-lucide="user-plus" class="w-4 h-4"></i></span>
+          <h3 class="text-base font-bold text-gray-900">Invitar Nuevo Usuario</h3>
+        </div>
+        <p class="text-xs text-gray-500 mb-4">El usuario recibirá un correo electrónico con instrucciones para configurar su contraseña.</p>
         
         <form id="form-invite-user" class="space-y-4">
           <div>
@@ -210,29 +397,142 @@ export function renderAdminPanel(pendingRequests = []) {
               <option value="Administrador">Administrador</option>
             </select>
           </div>
-          <button type="submit" class="w-full py-2.5 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 text-sm">
-            Enviar Invitación
+          <button type="submit" class="w-full py-2.5 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 text-sm flex items-center justify-center gap-2 shadow-sm">
+            <i data-lucide="send" class="w-4 h-4"></i> Enviar Invitación
           </button>
         </form>
       </div>
 
-      <!-- Módulo Solicitudes Pendientes (Requisito 10) -->
+      <!-- Módulo Brindar / Revocar Roles (Punto 6) -->
       <div class="bg-white p-6 rounded-xl border shadow-sm">
-        <h3 class="text-base font-bold text-gray-900 mb-2">Solicitudes Pendientes</h3>
-        <p class="text-xs text-gray-500 mb-4">Aceptar o rechazar acceso a nuevos usuarios.</p>
+        <div class="flex justify-between items-center mb-2">
+          <div class="flex items-center gap-2">
+            <span class="p-2 bg-purple-50 text-purple-600 rounded-lg"><i data-lucide="shield-check" class="w-4 h-4"></i></span>
+            <h3 class="text-base font-bold text-gray-900">Gestión de Roles</h3>
+          </div>
+          <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-semibold">${users.length} usuarios</span>
+        </div>
+        <p class="text-xs text-gray-500 mb-4">Brindar privilegios (ascender a Administrador) o revocarlos (descender a Usuario Común).</p>
 
-        <div class="space-y-3 max-h-64 overflow-y-auto">
+        <div class="space-y-3 max-h-80 overflow-y-auto pr-1">
+          ${users.length === 0 ? `
+            <div class="text-center py-10 text-xs text-gray-400">No hay usuarios registrados en este momento.</div>
+          ` : users.map(u => {
+            const isAdmin = u.role === 'Administrador';
+            const userEmail = u.email || 'usuario@uce.edu.do';
+            return `
+              <div class="flex items-center justify-between p-3 border rounded-lg bg-gray-50 hover:bg-white transition-all">
+                <div class="min-w-0 flex-1 mr-3">
+                  <div class="flex items-center gap-2">
+                    <p class="text-sm font-semibold text-gray-800 truncate">${userEmail}</p>
+                    <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${isAdmin ? 'bg-purple-100 text-purple-700' : 'bg-slate-200 text-slate-700'}">
+                      ${u.role}
+                    </span>
+                  </div>
+                  <p class="text-[11px] text-gray-400">ID: ${u.id ? u.id.substring(0, 8) + '...' : '--'}</p>
+                </div>
+                <div>
+                  ${isAdmin ? `
+                    <button data-user-id="${u.id}" data-user-email="${userEmail}" data-new-role="Usuario Común" class="btn-change-role px-2.5 py-1.5 bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-300 text-xs font-semibold rounded-md flex items-center gap-1 transition-all" title="Descender a Usuario Común">
+                      <i data-lucide="arrow-down" class="w-3.5 h-3.5"></i> Descender
+                    </button>
+                  ` : `
+                    <button data-user-id="${u.id}" data-user-email="${userEmail}" data-new-role="Administrador" class="btn-change-role px-2.5 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-300 text-xs font-semibold rounded-md flex items-center gap-1 transition-all" title="Ascender a Administrador">
+                      <i data-lucide="arrow-up" class="w-3.5 h-3.5"></i> Ascender
+                    </button>
+                  `}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+
+  if (window.lucide) window.lucide.createIcons();
+
+  // Escuchador de formulario de invitación
+  const formInvite = document.getElementById('form-invite-user');
+  formInvite?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const email = document.getElementById('invite-email').value.trim();
+    const role = document.getElementById('invite-role').value;
+    if (onInvite) onInvite(email, role);
+  });
+
+  // Escuchadores de botones de cambio de rol
+  const roleButtons = document.querySelectorAll('.btn-change-role');
+  roleButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const userId = e.currentTarget.dataset.userId;
+      const userEmail = e.currentTarget.dataset.userEmail;
+      const newRole = e.currentTarget.dataset.newRole;
+      if (confirm(`¿Estás seguro de que deseas cambiar el rol de ${userEmail} a "${newRole}"?`)) {
+        if (onRoleChange) onRoleChange(userId, newRole);
+      }
+    });
+  });
+}
+
+// Alias para compatibilidad
+export function renderAdminPanel(users = [], onInvite, onRoleChange) {
+  renderAdminUsersPanel(users, onInvite, onRoleChange);
+}
+
+/**
+ * Muestra el panel de Solicitudes de Registro Pendientes (Punto 6)
+ */
+export function renderAdminRequestsPanel(pendingRequests = [], onResolve) {
+  const container = document.getElementById('dashboard-content');
+  const pageTitle = document.getElementById('page-title');
+  const breadcrumb = document.getElementById('breadcrumb-current');
+
+  pageTitle.textContent = 'Solicitudes de Acceso';
+  breadcrumb.textContent = 'Solicitudes Pendientes';
+
+  container.innerHTML = `
+    <div class="max-w-4xl mx-auto">
+      <div class="bg-white p-6 rounded-xl border shadow-sm">
+        <div class="flex justify-between items-center mb-4 pb-3 border-b">
+          <div>
+            <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+              <i data-lucide="user-check" class="w-5 h-5 text-emerald-600"></i> Solicitudes de Registro Pendientes
+            </h3>
+            <p class="text-xs text-gray-500 mt-0.5">Aceptar o rechazar solicitudes de acceso a la consola ambiental.</p>
+          </div>
+          <span class="text-xs px-3 py-1 bg-blue-50 text-blue-700 font-bold rounded-full border border-blue-200">
+            ${pendingRequests.length} pendientes
+          </span>
+        </div>
+
+        <div class="space-y-3">
           ${pendingRequests.length === 0 ? `
-            <div class="text-center py-8 text-xs text-gray-400">No hay solicitudes pendientes en este momento.</div>
+            <div class="text-center py-12">
+              <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i data-lucide="check-circle" class="w-6 h-6"></i>
+              </div>
+              <p class="text-sm font-semibold text-gray-700">No hay solicitudes pendientes en este momento.</p>
+              <p class="text-xs text-gray-400 mt-1">Todas las peticiones han sido procesadas.</p>
+            </div>
           ` : pendingRequests.map(req => `
-            <div class="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
-              <div>
-                <p class="text-sm font-medium text-gray-800">${req.email}</p>
-                <p class="text-xs text-gray-400">Solicitado: ${new Date(req.created_at).toLocaleDateString()}</p>
+            <div class="flex items-center justify-between p-4 border rounded-xl bg-gray-50/60 hover:bg-white hover:shadow-sm transition-all">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-xs font-bold">
+                  ${(req.email || 'U').substring(0, 2).toUpperCase()}
+                </div>
+                <div>
+                  <p class="text-sm font-semibold text-gray-900">${req.email}</p>
+                  <p class="text-xs text-gray-400">Solicitado el: ${req.created_at ? new Date(req.created_at).toLocaleString('es-DO') : 'Reciente'}</p>
+                </div>
               </div>
               <div class="flex gap-2">
-                <button data-req-id="${req.id}" data-action="approve" class="btn-req-action px-3 py-1 bg-emerald-600 text-white text-xs rounded-md hover:bg-emerald-700">Aceptar</button>
-                <button data-req-id="${req.id}" data-action="reject" class="btn-req-action px-3 py-1 bg-red-600 text-white text-xs rounded-md hover:bg-red-700">Rechazar</button>
+                <button data-req-id="${req.id}" data-action="approve" class="btn-req-action px-3.5 py-1.5 bg-emerald-600 text-white text-xs font-semibold rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-1 shadow-sm">
+                  <i data-lucide="check" class="w-3.5 h-3.5"></i> Aceptar
+                </button>
+                <button data-req-id="${req.id}" data-action="reject" class="btn-req-action px-3.5 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700 transition-colors flex items-center gap-1 shadow-sm">
+                  <i data-lucide="x" class="w-3.5 h-3.5"></i> Rechazar
+                </button>
               </div>
             </div>
           `).join('')}
@@ -240,6 +540,28 @@ export function renderAdminPanel(pendingRequests = []) {
       </div>
     </div>
   `;
+
+  if (window.lucide) window.lucide.createIcons();
+
+  // Escuchadores para resolver solicitudes (Aceptar / Rechazar)
+  const reqButtons = document.querySelectorAll('.btn-req-action');
+  reqButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const reqId = e.currentTarget.dataset.reqId;
+      const action = e.currentTarget.dataset.action;
+      if (onResolve) onResolve(reqId, action);
+    });
+  });
+}
+
+/**
+ * Actualiza el contador/badge de solicitudes pendientes en el menú lateral
+ */
+export function updateRequestsBadge(count) {
+  const badge = document.getElementById('requests-badge');
+  if (badge) {
+    badge.textContent = count;
+  }
 }
 
 function createGeneralLayout(data) {
@@ -247,10 +569,11 @@ function createGeneralLayout(data) {
   const paper = data?.paperCount || 0;
   const cardboard = data?.cardboardCount || 0;
   const plastic = data?.plasticCount || 0;
-
   const paperFill = data?.paperFill || 0;
   const cardboardFill = data?.cardboardFill || 0;
   const plasticFill = data?.plasticFill || 0;
+
+  const locLabel = data?.location === 'biblioteca' ? 'Biblioteca (Estación B)' : 'Laboratorios (Estación A)';
 
   return `
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -260,7 +583,7 @@ function createGeneralLayout(data) {
           <span class="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><i data-lucide="recycle" class="w-4 h-4"></i></span>
         </div>
         <div class="text-3xl font-bold text-gray-900">${total} <span class="text-xs text-gray-400 font-normal">residuos</span></div>
-        <p class="text-xs text-gray-500 mt-2">Conteo acumulado de la jornada</p>
+        <p class="text-xs text-gray-500 mt-2">Conteo en ${locLabel}</p>
       </div>
 
       <div class="bg-white p-5 rounded-xl border shadow-sm">
@@ -293,8 +616,11 @@ function createGeneralLayout(data) {
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
       <div class="lg:col-span-2 bg-white p-6 rounded-xl border shadow-sm">
-        <h3 class="text-base font-bold text-gray-900 mb-1">Actividad de los residuos</h3>
-        <p class="text-xs text-gray-500 mb-4">Residuos por intervalo de 1 hora</p>
+        <div class="flex justify-between items-center mb-1">
+          <h3 class="text-base font-bold text-gray-900">Actividad de los residuos</h3>
+          <span class="text-xs font-semibold px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md">${locLabel}</span>
+        </div>
+        <p class="text-xs text-gray-500 mb-4">Residuos por intervalo de 1 hora en este sitio</p>
         <div class="h-64 relative">
           <canvas id="mainChart"></canvas>
         </div>
@@ -312,17 +638,31 @@ function createGeneralLayout(data) {
           </div>
         </div>
         <div class="space-y-2 text-xs text-gray-600 border-t pt-4">
-          <div class="flex justify-between"><span>Mañana (08:00 - 12:00)</span><span class="font-bold font-mono">${data?.shifts?.morning || 0}</span></div>
-          <div class="flex justify-between"><span>Mediodía (12:00 - 16:00)</span><span class="font-bold font-mono">${data?.shifts?.noon || 0}</span></div>
-          <div class="flex justify-between"><span>Tarde (16:00 - 20:00)</span><span class="font-bold font-mono">${data?.shifts?.afternoon || 0}</span></div>
+          <div class="flex justify-between items-center">
+            <span class="flex items-center gap-1.5"><i data-lucide="sunrise" class="w-3.5 h-3.5 text-amber-500"></i> Mañana (08:00 - 12:00)</span>
+            <span class="font-bold font-mono text-gray-900">${data?.shifts?.morning || 0}</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="flex items-center gap-1.5"><i data-lucide="sun" class="w-3.5 h-3.5 text-orange-500"></i> Tarde (12:00 - 18:00)</span>
+            <span class="font-bold font-mono text-gray-900">${data?.shifts?.afternoon ?? data?.shifts?.noon ?? 0}</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="flex items-center gap-1.5"><i data-lucide="moon" class="w-3.5 h-3.5 text-indigo-500"></i> Noche (18:00 - 00:00)</span>
+            <span class="font-bold font-mono text-gray-900">${data?.shifts?.night || 0}</span>
+          </div>
         </div>
       </div>
     </div>
 
     <div class="bg-white p-6 rounded-xl border shadow-sm">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-base font-bold text-gray-900">Estado de los contenedores</h3>
-        <span class="text-xs text-gray-500">La alerta se activa con un llenado &ge; ${CONFIG.ALERT_THRESHOLD}%</span>
+        <div>
+          <h3 class="text-base font-bold text-gray-900">Estado de los compartimentos (${locLabel})</h3>
+          <span class="text-xs text-gray-500">La alerta se activa con un llenado &ge; ${CONFIG.ALERT_THRESHOLD}%</span>
+        </div>
+        <span class="text-xs px-2.5 py-1 bg-emerald-50 text-emerald-700 font-semibold rounded-lg border border-emerald-200">
+          Prototipo rotativo activo
+        </span>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         ${renderContainerCard('Papel', paperFill, '#2b7fff')}
@@ -337,29 +677,37 @@ function createIndividualLayout(type, data) {
   const config = CONFIG.WASTE_TYPES[type.toUpperCase()];
   const count = data ? data[`${type}Count`] : 0;
   const fill = data ? data[`${type}Fill`] : 0;
+  const locLabel = data?.location === 'biblioteca' ? 'Biblioteca (Estación B)' : 'Laboratorios (Estación A)';
 
   return `
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
       <div class="bg-white p-5 rounded-xl border shadow-sm">
         <span class="text-xs text-gray-500 font-medium uppercase">Total ${config.label}</span>
         <div class="text-3xl font-bold text-gray-900 mt-2">${count} <span class="text-xs text-gray-400 font-normal">residuos</span></div>
+        <p class="text-xs text-gray-400 mt-1">${locLabel}</p>
       </div>
       <div class="bg-white p-5 rounded-xl border shadow-sm">
         <span class="text-xs text-gray-500 font-medium uppercase">Hora de mayor actividad</span>
         <div class="text-3xl font-bold text-gray-900 mt-2">${data?.peakHour || '--:--'}</div>
+        <p class="text-xs text-gray-400 mt-1">Franja más concurrida</p>
       </div>
       <div class="bg-white p-5 rounded-xl border shadow-sm">
         <span class="text-xs text-gray-500 font-medium uppercase">Promedio por hora</span>
         <div class="text-3xl font-bold text-gray-900 mt-2">${data?.averagePerHour || 0}</div>
+        <p class="text-xs text-gray-400 mt-1">residuos / hora</p>
       </div>
       <div class="bg-white p-5 rounded-xl border shadow-sm">
         <span class="text-xs text-gray-500 font-medium uppercase">Llenado del contenedor</span>
         <div class="text-3xl font-bold ${fill >= CONFIG.ALERT_THRESHOLD ? 'text-red-600' : 'text-gray-900'} mt-2">${fill}%</div>
+        <p class="text-xs text-gray-400 mt-1">Sensor ultrasónico</p>
       </div>
     </div>
 
     <div class="bg-white p-6 rounded-xl border shadow-sm mb-6">
-      <h3 class="text-base font-bold text-gray-900 mb-4">Actividad del ${config.label.toLowerCase()}</h3>
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-base font-bold text-gray-900">Actividad del ${config.label.toLowerCase()}</h3>
+        <span class="text-xs px-2.5 py-1 bg-slate-100 text-slate-700 font-semibold rounded-md">${locLabel}</span>
+      </div>
       <div class="h-64 relative">
         <canvas id="mainChart"></canvas>
       </div>
@@ -424,11 +772,6 @@ function renderSingleChart(type, chartData) {
   });
 }
 
-
-import { LOCATIONS } from '../config.js';
-
-let currentLocation = 'laboratorios';
-
 export function initLocationEvents(onLocationChange) {
   const locBtns = document.querySelectorAll('.location-btn');
   const stationLabel = document.getElementById('location-station-label');
@@ -468,7 +811,7 @@ export function getCurrentLocation() {
  * @param {string} activeNavId - ID del elemento nav activo (ej. 'nav-dashboard', 'nav-history', etc.)
  */
 export function setActiveNav(activeNavId) {
-  const navIds = ['nav-dashboard', 'nav-containers', 'nav-history', 'nav-admin-users', 'nav-admin-requests'];
+  const navIds = ['nav-dashboard', 'nav-history', 'nav-admin-users', 'nav-admin-requests'];
 
   navIds.forEach(id => {
     const navItem = document.getElementById(id);
