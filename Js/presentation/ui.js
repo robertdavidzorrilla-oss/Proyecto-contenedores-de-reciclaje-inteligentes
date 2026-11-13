@@ -4,6 +4,7 @@ import { CONFIG, LOCATIONS } from '../config.js';
 let chartInstance = null;
 let reportChartInstance = null;
 let currentLocation = 'laboratorios';
+let isSystemPaused = false;
 
 export function initMobileMenu() {
   const toggleBtn = document.getElementById('mobile-menu-btn');
@@ -833,4 +834,31 @@ export function setActiveNav(activeNavId) {
       filterBar.classList.add('hidden');
     }
   }
+}
+
+export function initPauseButton(onPauseChange) {
+  const pauseBtn = document.getElementById('btn-toggle-pause');
+  const pauseText = document.getElementById('pause-text');
+  const pauseIcon = document.getElementById('pause-icon');
+
+  pauseBtn?.addEventListener('click', () => {
+    isSystemPaused = !isSystemPaused;
+
+    if (isSystemPaused) {
+      pauseBtn.className = 'w-full mt-2 py-1.5 px-2 text-[11px] font-semibold rounded-lg bg-amber-600/20 border border-amber-500 text-amber-300 transition-all flex items-center justify-center gap-1.5';
+      if (pauseText) pauseText.textContent = 'Sistema Pausado (Traslado)';
+      if (pauseIcon) pauseIcon.setAttribute('data-lucide', 'pause');
+    } else {
+      pauseBtn.className = 'w-full mt-2 py-1.5 px-2 text-[11px] font-semibold rounded-lg bg-slate-800 border border-slate-700 text-amber-400 hover:bg-slate-700 transition-all flex items-center justify-center gap-1.5';
+      if (pauseText) pauseText.textContent = 'Sistema Activo (Contando)';
+      if (pauseIcon) pauseIcon.setAttribute('data-lucide', 'play');
+    }
+
+    if (window.lucide) window.lucide.createIcons();
+    if (onPauseChange) onPauseChange(isSystemPaused);
+  });
+}
+
+export function getSystemPauseState() {
+  return isSystemPaused;
 }
