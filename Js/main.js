@@ -194,12 +194,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Evento para alternar entre ubicaciones rotativas (Laboratorios / Biblioteca - Requisito Adicional 1)
   initLocationEvents(async (newLocation) => {
+    // Al cambiar de ubicación, navegar siempre a Vista General con los datos de esa ubicación
+    currentNav = 'nav-dashboard';
+    setActiveNav('nav-dashboard');
+    currentWasteFilter = 'all';
+    setActiveFilter('all');
+
     cachedMetrics = await WasteRepository.getDashboardMetrics(newLocation);
-    if (currentNav === 'nav-dashboard') {
-      renderDashboard(currentWasteFilter, cachedMetrics);
-    } else if (currentNav === 'nav-history') {
-      await renderCurrentReport(currentWasteFilter);
-    }
+    renderDashboard(currentWasteFilter, cachedMetrics);
+
     // Comprobar alertas de la nueva ubicación
     await AlertService.checkDashboardMetricsAlerts(cachedMetrics, newLocation);
   });

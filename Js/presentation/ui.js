@@ -204,7 +204,7 @@ export function renderReportView(metricsData, onExport, filterType = 'all') {
           <div class="p-3 bg-white rounded-lg border ${metricsData.topLocation.id === 'laboratorios' ? 'border-emerald-400 ring-1 ring-emerald-300' : 'border-gray-200'}">
             <div class="flex justify-between items-center mb-1.5">
               <span class="text-xs font-semibold text-gray-800 flex items-center gap-1.5">
-                <i data-lucide="flask-conical" class="w-3.5 h-3.5 text-blue-600"></i> Laboratorios (Estación A)
+                <i data-lucide="flask-conical" class="w-3.5 h-3.5 text-blue-600"></i> Laboratorios, Estación A
               </span>
               <span class="text-xs font-bold text-gray-900">${labsTotal} depósitos <span class="text-gray-400 font-normal">(${labsPct}%)</span></span>
             </div>
@@ -216,7 +216,7 @@ export function renderReportView(metricsData, onExport, filterType = 'all') {
           <div class="p-3 bg-white rounded-lg border ${metricsData.topLocation.id === 'biblioteca' ? 'border-emerald-400 ring-1 ring-emerald-300' : 'border-gray-200'}">
             <div class="flex justify-between items-center mb-1.5">
               <span class="text-xs font-semibold text-gray-800 flex items-center gap-1.5">
-                <i data-lucide="book-open" class="w-3.5 h-3.5 text-amber-600"></i> Biblioteca (Estación B)
+                <i data-lucide="book-open" class="w-3.5 h-3.5 text-amber-600"></i> Biblioteca, Estación B
               </span>
               <span class="text-xs font-bold text-gray-900">${libTotal} depósitos <span class="text-gray-400 font-normal">(${libPct}%)</span></span>
             </div>
@@ -573,7 +573,7 @@ function createGeneralLayout(data) {
   const cardboardFill = data?.cardboardFill || 0;
   const plasticFill = data?.plasticFill || 0;
 
-  const locLabel = data?.location === 'biblioteca' ? 'Biblioteca (Estación B)' : 'Laboratorios (Estación A)';
+  const locLabel = data?.location === 'biblioteca' ? 'Biblioteca, Estación B' : 'Laboratorios, Estación A';
 
   return `
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -677,7 +677,7 @@ function createIndividualLayout(type, data) {
   const config = CONFIG.WASTE_TYPES[type.toUpperCase()];
   const count = data ? data[`${type}Count`] : 0;
   const fill = data ? data[`${type}Fill`] : 0;
-  const locLabel = data?.location === 'biblioteca' ? 'Biblioteca (Estación B)' : 'Laboratorios (Estación A)';
+  const locLabel = data?.location === 'biblioteca' ? 'Biblioteca, Estación B' : 'Laboratorios, Estación A';
 
   return `
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">

@@ -19,5 +19,5 @@ export const CONFIG = {
 
 export const LOCATIONS = {
   LABS: { id: 'laboratorios', label: 'Laboratorios', station: 'Estación A - Edificio de Labs' },
-  LIBRARY: { id: 'biblioteca', label: 'Biblioteca', station: 'Estación B - Planta Baja' }
+  LIBRARY: { id: 'biblioteca', label: 'Biblioteca', station: 'Estación B - Biblioteca' }
 };

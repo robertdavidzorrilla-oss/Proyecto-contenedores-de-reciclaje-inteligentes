@@ -105,7 +105,7 @@ export class ReportService {
     } else if (libTotal > labsTotal) {
       topLocation = {
         id: 'biblioteca',
-        name: 'Biblioteca (Planta Baja - Estación B)',
+        name: 'Biblioteca (Estación B - Biblioteca)',
         shortName: 'Biblioteca',
         total: libTotal,
         percentage: totalLocations > 0 ? ((libTotal / totalLocations) * 100).toFixed(1) : '50.0',
@@ -215,8 +215,8 @@ export class ReportService {
         ['Mayor Residuo Depositado', `${metricsData.maxWaste.type.toUpperCase()} (${metricsData.maxWaste.total})`],
         ['Menor Residuo Depositado', `${metricsData.minWaste.type.toUpperCase()} (${metricsData.minWaste.total})`],
         ['Lugar con Mayor Movimiento', `${metricsData.topLocation.name} (${metricsData.topLocation.total} depósitos - ${metricsData.topLocation.percentage}%)`],
-        ['Total Depósitos - Laboratorios (Estación A)', metricsData.locationStats.laboratorios.total],
-        ['Total Depósitos - Biblioteca (Estación B)', metricsData.locationStats.biblioteca.total],
+        ['Total Depósitos - Laboratorios, Estación A', metricsData.locationStats.laboratorios.total],
+        ['Total Depósitos - Biblioteca, Estación B', metricsData.locationStats.biblioteca.total],
         ['Papel Total', metricsData.counts.papel],
         ['Cartón Total', metricsData.counts.carton],
         ['Plástico Total', metricsData.counts.plastico]
@@ -227,8 +227,8 @@ export class ReportService {
       // Hoja 2: Comparativa de Lugares
       const locationsData = [
         ['Ubicación', 'Total Residuos', 'Papel', 'Cartón', 'Plástico', 'Alertas >= 85%'],
-        ['Laboratorios (Estación A)', metricsData.locationStats.laboratorios.total, metricsData.locationStats.laboratorios.papel, metricsData.locationStats.laboratorios.carton, metricsData.locationStats.laboratorios.plastico, metricsData.locationStats.laboratorios.alerts],
-        ['Biblioteca (Estación B)', metricsData.locationStats.biblioteca.total, metricsData.locationStats.biblioteca.papel, metricsData.locationStats.biblioteca.carton, metricsData.locationStats.biblioteca.plastico, metricsData.locationStats.biblioteca.alerts]
+        ['Laboratorios, Estación A', metricsData.locationStats.laboratorios.total, metricsData.locationStats.laboratorios.papel, metricsData.locationStats.laboratorios.carton, metricsData.locationStats.laboratorios.plastico, metricsData.locationStats.laboratorios.alerts],
+        ['Biblioteca, Estación B', metricsData.locationStats.biblioteca.total, metricsData.locationStats.biblioteca.papel, metricsData.locationStats.biblioteca.carton, metricsData.locationStats.biblioteca.plastico, metricsData.locationStats.biblioteca.alerts]
       ];
       const wsLocs = XLSX.utils.aoa_to_sheet(locationsData);
       XLSX.utils.book_append_sheet(wb, wsLocs, 'Movimiento por Ubicación');
@@ -313,8 +313,8 @@ export class ReportService {
           heading: docx.HeadingLevel.HEADING_2,
         }),
         new docx.Paragraph({ text: `• Lugar con mayor flujo registrado: ${metricsData.topLocation.name}` }),
-        new docx.Paragraph({ text: `• Total depósitos en Laboratorios (Estación A): ${metricsData.locationStats.laboratorios.total}` }),
-        new docx.Paragraph({ text: `• Total depósitos en Biblioteca (Estación B): ${metricsData.locationStats.biblioteca.total}` }),
+        new docx.Paragraph({ text: `• Total depósitos en Laboratorios, Estación A: ${metricsData.locationStats.laboratorios.total}` }),
+        new docx.Paragraph({ text: `• Total depósitos en Biblioteca, Estación B: ${metricsData.locationStats.biblioteca.total}` }),
         new docx.Paragraph({ text: `• Proporción líder: ${metricsData.topLocation.percentage}% del total de movimientos` }),
         new docx.Paragraph({ text: "" }),
         new docx.Paragraph({
