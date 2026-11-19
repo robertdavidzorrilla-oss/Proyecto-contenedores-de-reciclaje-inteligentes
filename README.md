@@ -11,7 +11,7 @@
 
 ---
 
-## 📌 About the Project
+##  About the Project
 
 **RecySense** is an intelligent waste monitoring and recycling management system designed to optimize solid waste collection and foster sustainable habits.
 
@@ -19,7 +19,7 @@ The solution integrates IoT hardware stations with a cloud-connected web console
 
 ---
 
-## 🚀 Key Features
+##  Key Features
 
 - **Real-Time IoT Telemetry**: Instant visualization of deposited waste counts and container fill percentages via live Supabase WebSocket subscriptions.
 - **Dual-Station Location Tracking**: Independent tracking and comparative flow analysis between **Station A (Laboratories)** and **Station B (Library)**.
@@ -38,7 +38,7 @@ The solution integrates IoT hardware stations with a cloud-connected web console
 
 ---
 
-## 🛠️ Tools & Technologies
+##  Tools & Technologies
 
 ### Hardware
 | Component | Purpose |
@@ -68,7 +68,7 @@ The solution integrates IoT hardware stations with a cloud-connected web console
 
 ---
 
-## 🏗️ System Architecture
+##  System Architecture
 
 RecySense is structured around an end-to-end IoT pipeline and a modular **3-Tier Frontend Architecture**:
 
@@ -118,7 +118,7 @@ Js/
 
 ---
 
-## 📂 Project Structure
+##  Project Structure
 
 ```
 Proyecto-contenedores de reciclaje inteligentes/
@@ -140,7 +140,7 @@ Proyecto-contenedores de reciclaje inteligentes/
 
 ---
 
-## ⚙️ Getting Started
+##  Getting Started
 
 ### Prerequisites
 - A modern web browser (Chrome, Firefox, Edge, Safari).
@@ -178,6 +178,6 @@ Proyecto-contenedores de reciclaje inteligentes/
 
 ---
 
-## 👥 Authors & Academic Context
+##  Authors & Academic Context
 
 Developed for the **Universidad Central del Este (UCE)** like a prototype as part of the Engineering Innovation and Environmental Sustainability initiatives. This prototype will not be permanently at the institution..
